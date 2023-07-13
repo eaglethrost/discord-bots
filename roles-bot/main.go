@@ -57,13 +57,50 @@ func printRoles(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	// If the message is "ping" reply with "Pong!"
-	if m.Content == "ping" {
-		s.ChannelMessageSend(m.ChannelID, "Pong!")
-	}
+	// Get all the roles in this server
+	if m.Content == "!roles" {
 
-	// If the message is "pong" reply with "Ping!"
-	if m.Content == "pong" {
-		s.ChannelMessageSend(m.ChannelID, "Ping!")
+		// Get Guild ID from message
+		guildID := m.GuildID
+
+		// Get members of Guild
+		members, err := s.GuildMembers(guildID, "0", 1000)
+		if err != nil {
+			fmt.Println("Failed to get members")
+			return
+		}
+
+		// Map Role ID to its names
+		rolesDefinition := make(map[string]string)
+		roles, err := s.GuildRoles(guildID)
+		if err != nil {
+			fmt.Println("Failed to get roles")
+			return
+		}
+		for _, role := range roles {
+			rolesDefinition[role.ID] = role.Name
+		}
+
+		// Map members to each role they have
+		memberRoles := make(map[string][]string)
+		for _, member := range members {
+			for _, role := range member.Roles {
+				// Since the role of members is in ID form, we need to translate it to its name
+				roleName := rolesDefinition[role]
+				memberRoles[roleName] = append(memberRoles[roleName], member.User.Username)
+			}
+		}
+
+		// Print Roles and send it back to discord chat
+		channelID := m.ChannelID
+		var message = ""
+		for role, member := range memberRoles {
+			message += fmt.Sprintf("%v:\n%v\n\n", role, member)
+		}
+		_, err = s.ChannelMessageSend(channelID, message)
+		if err != nil {
+			fmt.Println("Failed to send message")
+			return
+		}
 	}
 }
