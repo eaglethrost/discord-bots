@@ -21,10 +21,10 @@ func init() {
 }
 
 func main() {
-	// Create Discord Session
+	// Create Discord Session, API Client
 	dg, err := discordgo.New("Bot " + Token)
 	if err != nil {
-		fmt.Println("Error creating bot!")
+		fmt.Println("Error creating bot: ", err.Error())
 		return
 	}
 
@@ -37,7 +37,7 @@ func main() {
 	// Connect to DiscordBot Socket and start listeing
 	err = dg.Open()
 	if err != nil {
-		fmt.Println("Error listening to bot!")
+		fmt.Println("Error listening to bot: ", err.Error())
 		return
 	}
 
@@ -94,13 +94,19 @@ func printRoles(s *discordgo.Session, m *discordgo.MessageCreate) {
 		// Print Roles and send it back to discord chat
 		channelID := m.ChannelID
 		var message = ""
-		for role, member := range memberRoles {
-			message += fmt.Sprintf("%v:\n%v\n\n", role, member)
+		for role, members := range memberRoles {
+			message += fmt.Sprintf("%v:\n", role)
+			for _, member := range members {
+				message += fmt.Sprintf("- %v\n", member)
+			}
+			message += fmt.Sprintf("\n")
 		}
 		_, err = s.ChannelMessageSend(channelID, message)
 		if err != nil {
 			fmt.Println("Failed to send message")
 			return
 		}
+
+		// TODO: Add custom HTML
 	}
 }
